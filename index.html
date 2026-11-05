@@ -280,21 +280,21 @@ const QUESTIONS = [
     options:["Integrity","Confidentiality","Availability","Non-repudiation"], answer:1,
     explain:"Confidentiality protects data from unauthorized disclosure, using controls such as encryption, access control and authentication." },
   { pillar:"Integrity",
-    q:"An employee without proper authorization changes payroll records, making them inaccurate. Which principle was violated?",
+    q:"An employee without proper permission changes payroll records, making them inaccurate. Which principle was violated?",
     options:["Availability","Confidentiality","Integrity","Authentication"], answer:2,
     explain:"Integrity means data stays accurate and is only changed by authorized people in authorized ways. Unauthorized modification breaks integrity." },
   { pillar:"Availability",
-    q:"A Distributed Denial-of-Service (DDoS) attack primarily targets which principle?",
+    q:"A hospital introduces an Uninterruptible Power Supply (UPS) for its critical computer systems. Which security objective does this primarily support?",
     options:["Availability","Integrity","Confidentiality","Accountability"], answer:0,
     explain:"A DDoS floods a service so legitimate users can't reach it. That is a direct attack on availability." },
   { pillar:"Confidentiality",
-    q:"Encrypting a laptop's hard drive (data at rest) mainly protects which principle if the laptop is stolen?",
+    q:"A university accidentally publishes a file containing students' personal details and examination results on a publicly accessible website. Which CIA principle is primarily affected?",
     options:["Availability","Integrity","Non-repudiation","Confidentiality"], answer:3,
     explain:"Full-disk encryption stops the thief from reading the data, so it preserves confidentiality. It does not bring the data back to you, which would be availability." },
   { pillar:"Availability",
-    q:"Which control is MAINLY used to support availability?",
-    options:["Redundant servers and regular backups","Hashing files with SHA-256","Role-based access control","Digital signatures"], answer:0,
-    explain:"Redundancy, failover and backups keep systems and data usable when something fails. Hashing and signatures support integrity, and access control supports confidentiality." }
+    q:"WhatsApp schedules automatic chat backups to cloud storage at 2:00 AM. Which principle of the CIA Triad is primarily addressed by this practice?",
+    options:["Confidentiality","Integrity","Availability","Authentication"], answer:2,
+    explain:"Make it mostly available. When user activity is generally low, to minimise disruption to normal usage." }
 ];
 
 const PILLARS = {
