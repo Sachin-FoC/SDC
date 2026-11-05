@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIA Triad Quiz</title>
+<style>
+  :root{
+    --bg:#fafafa; --surface:#ffffff; --text:#111827; --muted:#6b7280; --line:#e5e7eb; --soft:#f3f4f6;
+    --accent:#2563eb; --accent-soft:#eff6ff; --ok:#16a34a; --ok-soft:#f0fdf4; --bad:#dc2626; --bad-soft:#fef2f2;
+    --C:#2563eb; --I:#7c3aed; --A:#db2777; --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f1115; --surface:#171a21; --text:#f3f4f6; --muted:#9ca3af; --line:#272b35; --soft:#1f232c;
+      --accent:#60a5fa; --accent-soft:#1e293b; --ok:#4ade80; --ok-soft:#14261b; --bad:#f87171; --bad-soft:#2a1717;
+      --C:#60a5fa; --I:#a78bfa; --A:#f472b6;}
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);
+    line-height:1.55;min-height:100vh;min-height:100dvh}
+  main{width:100%;max-width:680px;margin:0 auto;padding:clamp(20px,6vw,64px) clamp(16px,5vw,32px) 48px}
+  .screen{display:none}
+  .screen.active{display:block;animation:in .35s ease}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h1{font-size:clamp(1.6rem,5vw,2.2rem);font-weight:700;letter-spacing:-.025em;line-height:1.2}
+  h2{font-size:clamp(1.1rem,3.6vw,1.35rem);font-weight:600;letter-spacing:-.01em;line-height:1.45}
+  .muted{color:var(--muted)}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(18px,4vw,28px)}
+
+  .btn{appearance:none;border:1px solid var(--text);background:var(--text);color:var(--bg);border-radius:10px;
+    padding:12px 20px;font:inherit;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;min-height:46px}
+  .btn:hover:not(:disabled){opacity:.85}
+  .btn:active:not(:disabled){transform:scale(.98)}
+  .btn:disabled{opacity:.25;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+  .btn.ghost:hover:not(:disabled){background:var(--soft);opacity:1}
+
+  /* Start */
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 32px}
+  .pill{font-size:.8rem;padding:4px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+  .pill i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .field{display:flex;gap:10px}
+  input[type=text]{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:10px;
+    padding:12px 14px;font:inherit;font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s;min-height:46px}
+  input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .err{color:var(--bad);font-size:.85rem;margin-top:8px;min-height:1.2em}
+  .meta{display:flex;gap:20px;margin-top:28px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+
+  /* Quiz */
+  .qtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .steps{display:flex;gap:6px;margin-bottom:32px}
+  .steps span{flex:1;height:4px;border-radius:99px;background:var(--line);transition:background .3s}
+  .steps span.done{background:var(--text)}
+  .steps span.cur{background:var(--accent)}
+  .options{display:grid;gap:10px;margin:24px 0 28px}
+  .opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);
+    color:var(--text);border-radius:12px;padding:14px 16px;font:inherit;cursor:pointer;transition:border-color .15s,background .15s;min-height:54px}
+  .opt:hover{border-color:var(--muted)}
+  .opt .key{width:26px;height:26px;flex:none;border-radius:7px;display:grid;place-items:center;border:1px solid var(--line);
+    font-size:.78rem;font-weight:600;color:var(--muted);transition:all .15s}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.sel .key{background:var(--accent);border-color:var(--accent);color:#fff}
+  .nav{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .hint{font-size:.78rem;color:var(--muted)}
+
+  /* Results */
+  .summary{display:flex;align-items:center;gap:clamp(18px,5vw,32px)}
+  .ring{position:relative;width:112px;height:112px;flex:none}
+  .ring svg{transform:rotate(-90deg);display:block}
+  .ring .val{position:absolute;inset:0;display:grid;place-items:center;font-weight:700;font-size:1.6rem;letter-spacing:-.02em}
+  .ring .val small{font-size:.9rem;color:var(--muted);font-weight:500}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:20px}
+  .stat{background:var(--surface);padding:12px 14px}
+  .stat b{display:block;font-size:1.15rem;font-variant-numeric:tabular-nums}
+  .stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+  .tabs{display:flex;gap:4px;margin:28px 0 16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:10px 12px;font:inherit;
+    font-weight:500;cursor:pointer;white-space:nowrap;margin-bottom:-1px;transition:color .15s}
+  .tabs button:hover{color:var(--text)}
+  .tabs button.active{color:var(--text);border-bottom-color:var(--text)}
+  .tab{display:none}.tab.active{display:block;animation:in .3s}
+
+  /* Review list */
+  .qitem{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+  .qitem.open{border-color:var(--muted)}
+  .qhead{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;width:100%;background:none;border:0;font:inherit;color:inherit;text-align:left}
+  .mark{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;flex:none}
+  .mark.ok{background:var(--ok-soft);color:var(--ok)} .mark.no{background:var(--bad-soft);color:var(--bad)}
+  .qhead .t{flex:1;min-width:0}
+  .qhead .t b{display:block;font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qhead .t small{font-size:.78rem;color:var(--muted)}
+  .chev{color:var(--muted);transition:transform .25s;flex:none}
+  .qitem.open .chev{transform:rotate(180deg)}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+  .qitem.open .qbody{grid-template-rows:1fr}
+  .qbody>div{overflow:hidden}
+  .qin{padding:4px 16px 18px 54px;font-size:.93rem}
+  .qin .question{margin-bottom:14px}
+  .ans{display:flex;gap:10px;align-items:baseline;padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:.9rem}
+  .ans .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;flex:none;width:86px}
+  .ans.ok{background:var(--ok-soft)} .ans.ok .lbl{color:var(--ok)}
+  .ans.no{background:var(--bad-soft)} .ans.no .lbl{color:var(--bad)}
+  .why{margin-top:12px;color:var(--muted);font-size:.9rem}
+  .why b{color:var(--text);font-weight:600}
+  .crowd{margin-top:14px;font-size:.8rem;color:var(--muted)}
+  .track{height:6px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:6px}
+  .track div{height:100%;width:0;border-radius:99px;background:var(--text);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+  .link{background:none;border:0;color:var(--accent);font:inherit;font-size:.85rem;cursor:pointer;padding:4px}
+
+  /* Time chart */
+  .chart{display:flex;align-items:flex-end;gap:clamp(8px,3vw,16px);height:120px;margin-bottom:8px}
+  .bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;cursor:pointer;background:none;border:0;font:inherit;color:inherit}
+  .bar .fill{width:100%;max-width:44px;height:0;border-radius:6px 6px 2px 2px;transition:height .8s cubic-bezier(.2,.8,.2,1),opacity .2s}
+  .bar .v{font-size:.72rem;color:var(--muted);margin-bottom:4px;font-variant-numeric:tabular-nums}
+  .bar:hover .fill{opacity:.75}
+  .xl{display:flex;gap:clamp(8px,3vw,16px);margin-bottom:24px}
+  .xl span{flex:1;text-align:center;font-size:.75rem;color:var(--muted)}
+
+  /* Pillars */
+  .pillar{padding:16px 0;border-bottom:1px solid var(--line)}
+  .pillar:last-of-type{border-bottom:0}
+  .pillar .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .pillar .top b{font-weight:600}
+  .pillar p{font-size:.85rem;color:var(--muted);margin-top:8px}
+  .callout{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--soft);font-size:.9rem}
+
+  /* Leaderboard */
+  .lb-head{display:flex;gap:10px;margin-bottom:12px}
+  .lb{width:100%;border-collapse:collapse;font-size:.92rem}
+  .lb th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .lb td{padding:12px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .lb td:nth-child(3),.lb td:nth-child(4){white-space:nowrap}
+  .lb td:nth-child(2){max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb tbody tr{animation:in .35s both}
+  .lb tr.me td{background:var(--accent-soft)}
+  .lb tr.me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  .rank{width:44px;color:var(--muted)}
+  .you{font-size:.7rem;padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:1px}
+  .dots{display:inline-flex;gap:3px;margin-left:8px;vertical-align:middle}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+  .dots i.on{background:var(--ok)}
+  .note{font-size:.78rem;color:var(--muted);margin-top:14px}
+  .actions{display:flex;gap:10px;justify-content:center;margin-top:32px}
+
+  /* Mobile */
+  @media (max-width:560px){
+    .field{flex-direction:column}
+    .field .btn{width:100%}
+    .summary{flex-direction:column;text-align:center}
+    .nav{position:sticky;bottom:0;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom));margin:0 -2px}
+    .nav .btn{flex:1}
+    .hint{display:none}
+    .qin{padding-left:16px}
+    .ans{flex-direction:column;gap:2px}
+    .dots{display:none}
+    .actions{flex-direction:column}
+    .actions .btn{width:100%}
+    .stat{padding:10px}
+  }
+  @media (hover:none){.opt:hover{border-color:var(--line)}.opt.sel:hover{border-color:var(--accent)}}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- START -->
+  <section id="start" class="screen active">
+    <p class="eyebrow">Security fundamentals</p>
+    <h1 style="margin-top:10px">CIA Triad Quiz</h1>
+    <p class="muted" style="margin-top:12px">Five questions on the core principles of information security. Your answers and feedback are revealed at the end.</p>
+    <div class="pills">
+      <span class="pill"><i style="background:var(--C)"></i>Confidentiality</span>
+      <span class="pill"><i style="background:var(--I)"></i>Integrity</span>
+      <span class="pill"><i style="background:var(--A)"></i>Availability</span>
+    </div>
+    <form id="startForm" class="field" autocomplete="off">
+      <input type="text" id="nameInput" placeholder="Your name" maxlength="24" aria-label="Your name">
+      <button class="btn" type="submit">Start</button>
+    </form>
+    <div class="err" id="nameErr"></div>
+    <div class="meta"><span>5 questions</span><span>~2 minutes</span><span>Ranked by score, then speed</span></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen">
+    <div class="qtop">
+      <span class="eyebrow" id="qCounter">Question 1 of 5</span>
+      <span class="eyebrow" id="qName"></span>
+    </div>
+    <div class="steps" id="steps"></div>
+    <h2 id="qText"></h2>
+    <div class="options" id="options" role="radiogroup"></div>
+    <div class="nav">
+      <button class="btn ghost" id="backBtn">Back</button>
+      <span class="hint">Keys 1–4 to select · Enter to continue</span>
+      <button class="btn" id="nextBtn" disabled>Next</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="screen">
+    <div class="summary">
+      <div class="ring">
+        <svg width="112" height="112" viewBox="0 0 112 112">
+          <circle cx="56" cy="56" r="48" stroke="var(--line)" stroke-width="8" fill="none"/>
+          <circle id="ringFill" cx="56" cy="56" r="48" stroke="var(--text)" stroke-width="8" fill="none" stroke-linecap="round"
+            stroke-dasharray="301.6" stroke-dashoffset="301.6" style="transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)"/>
+        </svg>
+        <div class="val"><span><span id="ringScore">0</span><small>/5</small></span></div>
+      </div>
+      <div>
+        <p class="eyebrow">Your result</p>
+        <h1 id="resTitle" style="margin-top:6px"></h1>
+        <p class="muted" id="resSub" style="margin-top:6px"></p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="stAcc">–</b><span>Accuracy</span></div>
+      <div class="stat"><b id="stTime">–</b><span>Time</span></div>
+      <div class="stat"><b id="stRank">…</b><span>Rank</span></div>
+    </div>
+
+    <nav class="tabs">
+      <button data-tab="tabQ" class="active">Feedback</button>
+      <button data-tab="tabP">By principle</button>
+      <button data-tab="tabL">Leaderboard</button>
+    </nav>
+
+    <div id="tabQ" class="tab active">
+      <p class="eyebrow" style="margin-bottom:12px">Time per question</p>
+      <div class="chart" id="chart"></div>
+      <div class="xl" id="chartLabels"></div>
+      <div class="toolbar">
+        <p class="eyebrow">Question review</p>
+        <button class="link" id="expandAll">Expand all</button>
+      </div>
+      <div id="qList"></div>
+    </div>
+
+    <div id="tabP" class="tab card"><div id="pillars"></div></div>
+
+    <div id="tabL" class="tab">
+      <div class="lb-head">
+        <input type="text" id="lbSearch" placeholder="Search name" aria-label="Search leaderboard">
+        <button class="btn ghost" id="lbRefresh" aria-label="Refresh">↻</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="lb">
+          <thead><tr><th>#</th><th>Name</th><th>Score</th><th>Time</th></tr></thead>
+          <tbody id="lbBody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="note" id="lbNote"></p>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" id="jumpLb">View my rank</button>
+      <button class="btn" id="retryBtn">Play again</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =========================================================
+   SHARED LEADERBOARD (optional)
+   Paste your Google Apps Script Web App URL between the quotes
+   so all visitors share one leaderboard. Leave empty and scores
+   are saved only in each visitor's own browser.
+   ========================================================= */
+const LEADERBOARD_API = "";
+
+const QUESTIONS = [
+  { pillar:"Confidentiality",
+    q:"Which principle of the CIA triad ensures that information is accessible only to authorized people?",
+    options:["Integrity","Confidentiality","Availability","Non-repudiation"], answer:1,
+    explain:"Confidentiality protects data from unauthorized disclosure, using controls such as encryption, access control and authentication." },
+  { pillar:"Integrity",
+    q:"An employee without proper authorization changes payroll records, making them inaccurate. Which principle was violated?",
+    options:["Availability","Confidentiality","Integrity","Authentication"], answer:2,
+    explain:"Integrity means data stays accurate and is only changed by authorized people in authorized ways. Unauthorized modification breaks integrity." },
+  { pillar:"Availability",
+    q:"A Distributed Denial-of-Service (DDoS) attack primarily targets which principle?",
+    options:["Availability","Integrity","Confidentiality","Accountability"], answer:0,
+    explain:"A DDoS floods a service so legitimate users can't reach it. That is a direct attack on availability." },
+  { pillar:"Confidentiality",
+    q:"Encrypting a laptop's hard drive (data at rest) mainly protects which principle if the laptop is stolen?",
+    options:["Availability","Integrity","Non-repudiation","Confidentiality"], answer:3,
+    explain:"Full-disk encryption stops the thief from reading the data, so it preserves confidentiality. It does not bring the data back to you, which would be availability." },
+  { pillar:"Availability",
+    q:"Which control is MAINLY used to support availability?",
+    options:["Redundant servers and regular backups","Hashing files with SHA-256","Role-based access control","Digital signatures"], answer:0,
+    explain:"Redundancy, failover and backups keep systems and data usable when something fails. Hashing and signatures support integrity, and access control supports confidentiality." }
+];
+
+const PILLARS = {
+  Confidentiality:{color:"var(--C)", tip:"Keeping data private: encryption, access control, MFA."},
+  Integrity:{color:"var(--I)", tip:"Keeping data accurate and trustworthy: hashing, digital signatures, change control."},
+  Availability:{color:"var(--A)", tip:"Keeping systems usable: redundancy, backups, DDoS protection."}
+};
+
+const N = QUESTIONS.length;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = s => s < 60 ? s.toFixed(1)+"s" : Math.floor(s/60)+"m "+Math.round(s%60)+"s";
+const LS_KEY = "ciaQuizBoard";
+const CHEV = `<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>`;
+
+let state = {}, board = [];
+
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); }
+
+/* ---------- Start ---------- */
+$("startForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("nameInput").value.trim();
+  if (name.length < 2) { $("nameErr").textContent = "Please enter at least 2 characters."; return; }
+  $("nameErr").textContent = "";
+  state = { name, idx:0, choices:Array(N).fill(null), times:Array(N).fill(0), qStart:0 };
+  $("qName").textContent = name;
+  show("quiz"); loadQuestion();
+});
+
+/* ---------- Quiz (no answers revealed) ---------- */
+function stopClock(){ state.times[state.idx] += (performance.now()-state.qStart)/1000; }
+
+function loadQuestion(){
+  const q = QUESTIONS[state.idx];
+  $("qCounter").textContent = `Question ${state.idx+1} of ${N}`;
+  $("steps").innerHTML = QUESTIONS.map((_,i)=>`<span class="${i===state.idx?'cur':state.choices[i]!==null?'done':''}"></span>`).join("");
+  $("qText").textContent = q.q;
+  $("options").innerHTML = q.options.map((o,i)=>`<button class="opt${state.choices[state.idx]===i?' sel':''}" role="radio" data-i="${i}"><span class="key">${String.fromCharCode(65+i)}</span><span>${esc(o)}</span></button>`).join("");
+  $("options").querySelectorAll(".opt").forEach(b => b.onclick = () => select(+b.dataset.i));
+  $("backBtn").style.visibility = state.idx === 0 ? "hidden" : "visible";
+  $("nextBtn").textContent = state.idx === N-1 ? "Submit" : "Next";
+  $("nextBtn").disabled = state.choices[state.idx] === null;
+  state.qStart = performance.now();
+}
+
+function select(i){
+  state.choices[state.idx] = i;
+  $("options").querySelectorAll(".opt").forEach((b,k)=>{ b.classList.toggle("sel", k===i); b.setAttribute("aria-checked", k===i); });
+  $("nextBtn").disabled = false;
+}
+
+$("nextBtn").onclick = () => {
+  if (state.choices[state.idx] === null) return;
+  stopClock();
+  if (state.idx < N-1) { state.idx++; loadQuestion(); } else finish();
+};
+$("backBtn").onclick = () => { if (state.idx>0){ stopClock(); state.idx--; loadQuestion(); } };
+
+document.addEventListener("keydown", e => {
+  if (!$("quiz").classList.contains("active")) return;
+  const n = parseInt(e.key);
+  if (n >= 1 && n <= 4) select(n-1);
+  const k = e.key.toLowerCase(); if ("abcd".includes(k) && k.length===1) select("abcd".indexOf(k));
+  if (e.key === "Enter" && !$("nextBtn").disabled) { e.preventDefault(); $("nextBtn").click(); }
+});
+
+/* ---------- Storage ---------- */
+function localBoard(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e){ return []; } }
+function saveLocal(entry){ try { const b = localBoard(); b.push(entry); localStorage.setItem(LS_KEY, JSON.stringify(b.slice(-500))); } catch(e){} }
+const normalize = e => ({ id:String(e.id), name:String(e.name), score:Number(e.score), time:Number(e.time),
+                          answers:String(e.answers).padStart(N,"0"), date:e.date });
+async function fetchBoard(){
+  if (LEADERBOARD_API) {
+    try { const r = await fetch(LEADERBOARD_API); const d = await r.json(); return { list:d.map(normalize), shared:true }; }
+    catch(e){ console.warn("Leaderboard fetch failed, using local", e); }
+  }
+  return { list:localBoard().map(normalize), shared:false };
+}
+async function saveScore(entry){
+  saveLocal(entry);
+  if (!LEADERBOARD_API) return;
+  try { await fetch(LEADERBOARD_API, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(entry) }); }
+  catch(e){ console.warn("Leaderboard save failed", e); }
+}
+const rankSort = (a,b) => b.score-a.score || a.time-b.time || String(a.date).localeCompare(String(b.date));
+
+/* ---------- Results ---------- */
+async function finish(){
+  const correct = state.choices.map((c,i)=> c===QUESTIONS[i].answer ? 1 : 0);
+  const score = correct.reduce((a,b)=>a+b,0);
+  const total = state.times.reduce((a,b)=>a+b,0);
+  state.correct = correct;
+  state.entry = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,7), name: state.name.slice(0,24),
+                  score, time:+total.toFixed(1), answers:correct.join(""), date:new Date().toISOString() };
+  show("results"); openTab("tabQ");
+  renderSummary(score, total);
+  renderReview();
+  renderPillars();
+  await saveScore(state.entry);
+  await loadBoard();
+}
+
+function renderSummary(score, total){
+  const titles = ["Keep learning","Good start","Getting there","Nice work","Great job","Perfect score"];
+  $("resTitle").textContent = titles[score];
+  $("resSub").textContent = `${state.name}, you answered ${score} of ${N} correctly. Review each question below.`;
+  $("stAcc").textContent = Math.round(score/N*100)+"%";
+  $("stTime").textContent = fmt(total);
+  $("stRank").textContent = "…";
+  $("ringFill").style.strokeDashoffset = 301.6;
+  setTimeout(()=> $("ringFill").style.strokeDashoffset = 301.6*(1-score/N), 80);
+  let n=0; $("ringScore").textContent=0;
+  const iv=setInterval(()=>{ if(n>=score){clearInterval(iv);return;} $("ringScore").textContent=++n; }, 200);
+}
+
+function renderReview(crowd){
+  const open = [...document.querySelectorAll(".qitem.open")].map(el=>+el.dataset.i);
+  const maxT = Math.max(...state.times, 1);
+  $("chart").innerHTML = state.times.map((t,i)=>`<button class="bar" data-i="${i}" aria-label="Question ${i+1}, ${fmt(t)}">
+      <span class="v">${fmt(t)}</span><span class="fill" style="background:${state.correct[i]?'var(--ok)':'var(--bad)'}"></span></button>`).join("");
+  $("chartLabels").innerHTML = QUESTIONS.map((_,i)=>`<span>Q${i+1}</span>`).join("");
+  setTimeout(()=> $("chart").querySelectorAll(".fill").forEach((f,i)=> f.style.height = Math.max(6, state.times[i]/maxT*78)+"%"), 60);
+
+  $("qList").innerHTML = QUESTIONS.map((q,i)=>{
+    const ok = state.correct[i];
+    return `<div class="qitem" data-i="${i}" id="qi${i}">
+      <button class="qhead" aria-expanded="false">
+        <span class="mark ${ok?'ok':'no'}">${ok?'✓':'✕'}</span>
+        <span class="t"><b>${i+1}. ${esc(q.q)}</b><small><span style="color:${PILLARS[q.pillar].color}">${q.pillar}</span> · ${fmt(state.times[i])}</small></span>
+        ${CHEV}
+      </button>
+      <div class="qbody"><div><div class="qin">
+        <p class="question">${esc(q.q)}</p>
+        <div class="ans ${ok?'ok':'no'}"><span class="lbl">Your answer</span><span>${esc(q.options[state.choices[i]])}</span></div>
+        ${ok?'':`<div class="ans ok"><span class="lbl">Correct</span><span>${esc(q.options[q.answer])}</span></div>`}
+        <p class="why"><b>${ok?'Correct.':'Explanation.'}</b> ${esc(q.explain)}</p>
+        <div class="crowd">${crowd ? `${crowd[i]}% of all players answered this correctly` : 'Loading how others did…'}
+          <div class="track"><div data-w="${crowd?crowd[i]:0}"></div></div></div>
+      </div></div></div></div>`;
+  }).join("");
+
+  document.querySelectorAll(".qitem .qhead").forEach(h => h.onclick = () => toggleQ(+h.parentElement.dataset.i));
+  $("chart").querySelectorAll(".bar").forEach(b => b.onclick = () => toggleQ(+b.dataset.i, true));
+  open.forEach(i => toggleQ(i, true, false));
+  updateExpandLabel();
+}
+
+function toggleQ(i, forceOpen, scroll=true){
+  const el = $("qi"+i), willOpen = forceOpen || !el.classList.contains("open");
+  el.classList.toggle("open", willOpen);
+  el.querySelector(".qhead").setAttribute("aria-expanded", willOpen);
+  if (willOpen) {
+    setTimeout(()=>{ const t = el.querySelector(".track div"); t.style.width = t.dataset.w+"%"; }, 120);
+    if (forceOpen && scroll) el.scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+  updateExpandLabel();
+}
+function updateExpandLabel(){
+  const all = document.querySelectorAll(".qitem").length, open = document.querySelectorAll(".qitem.open").length;
+  $("expandAll").textContent = open === all ? "Collapse all" : "Expand all";
+}
+$("expandAll").onclick = () => {
+  const collapse = $("expandAll").textContent === "Collapse all";
+  QUESTIONS.forEach((_,i)=> collapse ? ($("qi"+i).classList.remove("open")) : toggleQ(i, true, false));
+  updateExpandLabel();
+};
+
+function renderPillars(){
+  const s = {};
+  QUESTIONS.forEach((q,i)=>{ s[q.pillar] ??= {c:0,t:0}; s[q.pillar].t++; s[q.pillar].c += state.correct[i]; });
+  const rows = Object.entries(PILLARS).map(([p,info])=>{
+    const v = s[p] || {c:0,t:0}, pct = v.t ? Math.round(v.c/v.t*100) : 0;
+    return `<div class="pillar"><div class="top"><b style="color:${info.color}">${p}</b><span class="muted">${v.c}/${v.t}</span></div>
+      <div class="track"><div style="background:${info.color}" data-w="${pct}"></div></div><p>${info.tip}</p></div>`;
+  }).join("");
+  const weak = Object.entries(s).sort((a,b)=>a[1].c/a[1].t - b[1].c/b[1].t)[0];
+  const msg = weak[1].c === weak[1].t ? "You got every principle right." : `Worth reviewing: <b>${weak[0]}</b>.`;
+  $("pillars").innerHTML = rows + `<div class="callout">${msg}</div>`;
+}
+
+async function loadBoard(){
+  $("lbBody").innerHTML = `<tr><td colspan="4" class="muted">Loading…</td></tr>`;
+  const res = await fetchBoard();
+  board = res.list;
+  if (!board.some(e=>e.id===state.entry.id)) board.push(normalize(state.entry));
+  board.sort(rankSort);
+  const rank = board.findIndex(e=>e.id===state.entry.id)+1;
+  $("stRank").textContent = `#${rank} / ${board.length}`;
+  $("lbNote").textContent = res.shared
+    ? `Shared leaderboard · ${board.length} players · ranked by score, then fastest time.`
+    : `Showing scores saved on this device only.`;
+  const crowd = QUESTIONS.map((_,i)=> Math.round(board.filter(e=>e.answers[i]==="1").length / board.length * 100));
+  renderReview(crowd);
+  renderTable();
+}
+
+function renderTable(){
+  const qs = $("lbSearch").value.trim().toLowerCase();
+  const rows = board.map((e,i)=>({...e, rank:i+1})).filter(e=>!qs || e.name.toLowerCase().includes(qs));
+  const medal = r => r===1?"🥇":r===2?"🥈":r===3?"🥉":r;
+  $("lbBody").innerHTML = rows.length ? rows.slice(0,100).map((e,k)=>`<tr class="${e.id===state.entry.id?'me':''}" style="animation-delay:${Math.min(k,12)*35}ms">
+      <td class="rank">${medal(e.rank)}</td>
+      <td>${esc(e.name)}${e.id===state.entry.id?'<span class="you">you</span>':''}</td>
+      <td>${e.score}/${N}<span class="dots">${[...e.answers].map(a=>`<i class="${a==='1'?'on':''}"></i>`).join("")}</span></td>
+      <td>${fmt(e.time)}</td></tr>`).join("") : `<tr><td colspan="4" class="muted">No matches.</td></tr>`;
+}
+
+/* ---------- Tabs & actions ---------- */
+function openTab(id){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===id));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.id===id));
+  if (id==="tabP") setTimeout(()=> document.querySelectorAll("#pillars .track div").forEach(d=>d.style.width=d.dataset.w+"%"), 60);
+}
+document.querySelectorAll(".tabs button").forEach(b=> b.onclick = () => openTab(b.dataset.tab));
+$("lbSearch").oninput = renderTable;
+$("lbRefresh").onclick = loadBoard;
+$("jumpLb").onclick = () => { openTab("tabL"); setTimeout(()=>{ const me=document.querySelector("tr.me"); if(me) me.scrollIntoView({behavior:"smooth",block:"center"}); }, 100); };
+$("retryBtn").onclick = () => { $("nameInput").value = state.name; $("lbSearch").value = ""; show("start"); };
+</script>
+</body>
+</html>
